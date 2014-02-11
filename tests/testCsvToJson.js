@@ -7,7 +7,7 @@ function logResults(err, results) {
 }
 
 var fname = path.basename(__dirname) === path.dirname(filename) ?
-  fname = path.join(path.dirname(__dirname), filename) : path.resolve(__dirname,
+  path.join(path.dirname(__dirname), filename) : path.join(__dirname,
     filename);
 
 console.log(fname);
