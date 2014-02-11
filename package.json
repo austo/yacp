@@ -1,0 +1,13 @@
+{
+  "name": "csv-util",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/austo/csv-util.git"
+  },
+  "author": {
+    "name": "Austin Moran",
+    "email": "<moraustin@gmail.com>"
+  },
+  "description": "Simple server-size CSV utilities"
+}
