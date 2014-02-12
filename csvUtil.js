@@ -1,9 +1,9 @@
 var fs = require('fs'),
   trailingChars = /[^\w\d]*$/,
-  newLine = /[\n\r\s]*$/;
+  newLine = /[\n\r\s]*$/,
+  eol = /\n|\r\n|\r/; // support win/legacy mac/unix line endings
 
 
-// TODO: support mac os 9 line endings
 module.exports = function (filename, cb) {
   var retval = [],
     fieldNames = [],
@@ -56,7 +56,7 @@ module.exports = function (filename, cb) {
     else {
       var rawText = buffer.toString('utf8'),
         trimmedText = rawText.replace(newLine, ''),
-        rowText = trimmedText.split('\n');
+        rowText = trimmedText.split(eol);
       rowText.forEach(addRow);
     }
   }
