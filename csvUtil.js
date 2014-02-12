@@ -2,6 +2,8 @@ var fs = require('fs'),
   trailingChars = /[^\w\d]*$/,
   newLine = /[\n\r\s]*$/;
 
+
+// TODO: support mac os 9 line endings
 module.exports = function (filename, cb) {
   var retval = [],
     fieldNames = [],
@@ -13,15 +15,19 @@ module.exports = function (filename, cb) {
     }
 
     var fields = row.split(','),
-      rowObj = {};
+      rowObj = {},
+      add = false;
 
     for (var i = 0; i < nFields; ++i) {
       if (fields[i]) {
+        add = true;
         rowObj[fieldNames[i]] = fields[i];
       }
     }
 
-    retval.push(rowObj);
+    if (add) {
+      retval.push(rowObj);
+    }
 
     if (index === arr.length - 1) {
       cb(null, retval);
@@ -29,6 +35,7 @@ module.exports = function (filename, cb) {
   }
 
   // TODO: pass error to callback
+
   function readFile(fpath, callback) {
     fs.open(fpath, 'r', function (err, fd) {
       fs.fstat(fd, handleStats(fd, callback));
@@ -57,6 +64,7 @@ module.exports = function (filename, cb) {
   function getFieldNames(firstRow) {
     var cleanRow = firstRow.replace(trailingChars, ''),
       rawFields = cleanRow.split(',');
+    // console.log(rawFields);
     nFields = rawFields.length;
     rawFields.forEach(function (elem) {
       fieldNames.push(elem.trim().toLowerCase());
