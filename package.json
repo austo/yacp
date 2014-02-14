@@ -1,13 +1,13 @@
 {
-  "name": "csv-util",
+  "name": "yacp",
   "version": "0.0.1",
   "repository": {
     "type": "git",
-    "url": "https://github.com/austo/csv-util.git"
+    "url": "https://github.com/austo/yacp.git"
   },
   "author": {
     "name": "Austin Moran",
     "email": "<moraustin@gmail.com>"
   },
-  "description": "Simple server-size CSV utilities"
+  "description": "Yet another CSV parser (for Node.js)"
 }
