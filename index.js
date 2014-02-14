@@ -3,8 +3,8 @@ var fs = require('fs'),
   newLine = /[\n\r\s]*$/,
   eol = /\n|\r\n|\r/; // support win/legacy mac/unix line endings
 
+exports.parseFromPath = function (filename, cb) {
 
-module.exports = function (filename, cb) {
   var retval = [],
     fieldNames = [],
     nFields = 0;
