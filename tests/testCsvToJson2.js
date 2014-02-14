@@ -1,6 +1,6 @@
 var path = require('path'),
   filename = process.argv[2],
-  convertCsv = require('../csvUtil'),
+  yacp = require('../'),
   ditchRe = /ditch/i;
 
 function logResults(err, results) {
@@ -15,4 +15,4 @@ var fname = path.basename(__dirname) === path.dirname(filename) ?
   path.join(path.dirname(__dirname), filename) : path.join(__dirname,
     filename);
 
-convertCsv(fname, logResults);
+yacp.parseFromPath(fname, logResults);
