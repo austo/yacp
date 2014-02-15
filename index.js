@@ -1,3 +1,5 @@
+'use strict';
+
 var fs = require('fs'),
   trailingChars = /[^\w\d]*$/,
   newLine = /[\n\r\s]*$/,
