@@ -1,18 +1,29 @@
 'use strict';
 
 var fs = require('fs'),
+  assert = require('assert'),
   trailingChars = /[^\w\d]*$/,
   newLine = /[\n\r\s]*$/,
   eol = /\n|\r\n|\r/; // support win/legacy mac/unix line endings
 
-exports.parseFromPath = function (filename, cb) {
+exports.parseFromPath = function (filename, options, cb) {
+  assert(typeof filename === 'string');
 
   var retval = [],
     fieldNames = [],
     nFields = 0;
 
+  if (typeof options === 'function') {
+    cb = options;
+  }
+  else if (typeof options === 'object') {
+    if (options.fieldnames) {
+      fieldNames = options.fieldnames;
+    }
+  }
+
   function addRow(row, index, arr) {
-    if (index === 0) { // set field names and redefine function
+    if (index === 0) {
       return getFieldNames(row);
     }
 
@@ -64,9 +75,12 @@ exports.parseFromPath = function (filename, cb) {
   }
 
   function getFieldNames(firstRow) {
+    if (fieldNames.length > 0) {
+      nFields = fieldNames.length;
+      return;
+    }
     var cleanRow = firstRow.replace(trailingChars, ''),
       rawFields = cleanRow.split(',');
-    // console.log(rawFields);
     nFields = rawFields.length;
     rawFields.forEach(function (elem) {
       fieldNames.push(elem.trim().toLowerCase());

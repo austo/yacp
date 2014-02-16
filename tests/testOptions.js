@@ -3,12 +3,15 @@ var path = require('path'),
   yacp = require('../');
 
 function logResults(err, results) {
-  console.log(err ? err : results.length);
+  console.log(err ? err : results);
 }
 
 var fname = path.basename(__dirname) === path.dirname(filename) ?
   path.join(path.dirname(__dirname), filename) : path.join(__dirname,
     filename);
 
-console.log(fname);
-yacp.parseFromPath(fname, logResults);
+var options = {
+  fieldnames: ['image_id', 'large_image_id', 'upc', 'name']
+};
+
+yacp.parseFromPath(fname, options, logResults);
