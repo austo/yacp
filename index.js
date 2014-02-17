@@ -1,52 +1,75 @@
 'use strict';
 
 var fs = require('fs'),
+  readline = require('readline'),
+  Stream = require('stream'),
   assert = require('assert'),
+  slice = Array.prototype.slice,
   trailingChars = /[^\w\d]*$/,
   newLine = /[\n\r\s]*$/,
-  eol = /\n|\r\n|\r/; // support win/legacy mac/unix line endings
+  eol = /\n|\r\n|\r/, // support win/legacy mac/unix line endings
+  lineBufSize = 50000; // default lines to read at once in buffered mode
 
 exports.parseFromPath = function (filename, options, cb) {
   assert(typeof filename === 'string');
 
-  var retval = [],
-    fieldNames = [],
-    nFields = 0;
+  var fieldNames = [],
+    nFields = 0,
+    buffered = false,
+    lbufsz = 0,
+    firstPass = true;
 
-  if (typeof options === 'function') {
-    cb = options;
-  }
-  else if (typeof options === 'object') {
-    if (options.fieldnames) {
-      fieldNames = options.fieldnames;
+  function initOptions(opts) {
+    if (opts.fieldnames) {
+      fieldNames = opts.fieldnames;
     }
-  }
-
-  function addRow(row, index, arr) {
-    if (index === 0) {
-      return getFieldNames(row);
-    }
-
-    var fields = row.split(','),
-      rowObj = {},
-      add = false;
-
-    for (var i = 0; i < nFields; ++i) {
-      if (fields[i]) {
-        add = true;
-        rowObj[fieldNames[i]] = fields[i];
+    if (opts.buffer === true) {
+      buffered = true;
+      if ((opts.bufSize >>> 0) > 0) {
+        lbufsz = +opts.bufSize;
+      }
+      else {
+        lbufsz = lineBufSize;
       }
     }
-
-    if (add) {
-      retval.push(rowObj);
-    }
-
-    if (index === arr.length - 1) {
-      cb(null, retval);
-    }
   }
 
+  if (typeof options === 'function') {
+    cb = options; // no options
+  }
+  else if (typeof options === 'object') {
+    initOptions(options);
+  }
+
+  function addRow(callback) {
+    var retval = [];
+    return function (row, index, arr) {
+      if (index === 0 && firstPass) {
+        return getFieldNames(row);
+      }
+
+      var fields = row.split(','),
+        rowObj = {},
+        add = false;
+
+      for (var i = 0; i < nFields; ++i) {
+        if (fields[i]) {
+          add = true;
+          rowObj[fieldNames[i]] = fields[i];
+        }
+      }
+
+      if (add) {
+        retval.push(rowObj);
+      }
+
+      if (index === arr.length - 1) {
+        callback(null, retval);
+      }
+    };
+  }
+
+  // Non-buffered mode
   // TODO: pass error to callback
 
   function readFile(fpath, callback) {
@@ -70,7 +93,7 @@ exports.parseFromPath = function (filename, options, cb) {
       var rawText = buffer.toString('utf8'),
         trimmedText = rawText.replace(newLine, ''),
         rowText = trimmedText.split(eol);
-      rowText.forEach(addRow);
+      rowText.forEach(addRow(cb));
     }
   }
 
@@ -87,5 +110,46 @@ exports.parseFromPath = function (filename, options, cb) {
     });
   }
 
-  readFile(filename, parse);
+  // Buffered mode
+  function readBufferedFile(fpath) {
+    var rs = fs.createReadStream(fpath),
+      os = new Stream(),
+      count = 0,
+      chunkCount = 0,
+      lines = [];
+
+    var rl = readline.createInterface({
+      input: rs,
+      output: os
+    });
+
+    function handleLine(line) {
+      ++count;
+      lines.push(line);
+      if (count % lbufsz === 0) {
+        rl.pause();
+        if (chunkCount++ > 0) {
+          firstPass = false;
+        }
+        lines.forEach(addRow(function () {
+          var args = slice.call(arguments);
+          cb.apply(null, args);
+          lines = [];
+          rl.resume();
+        }));
+      }
+    }
+
+    rl.on('line', handleLine);
+
+    rl.on('close', function () {
+      lines.forEach(addRow(function () {
+        var args = slice.call(arguments);
+        console.log('total lines processed (including first line): %d', count);
+        cb.apply(null, args);
+      }));
+    });
+  }
+
+  return buffered ? readBufferedFile(filename) : readFile(filename, parse);
 };
