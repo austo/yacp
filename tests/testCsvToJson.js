@@ -11,4 +11,5 @@ var fname = path.basename(__dirname) === path.dirname(filename) ?
     filename);
 
 console.log(fname);
-yacp.parseFromPath(fname, logResults);
+var parser = new yacp.Parser();
+parser.parseFromPath(fname, logResults);

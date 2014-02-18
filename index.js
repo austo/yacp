@@ -3,6 +3,8 @@
 var fs = require('fs'),
   readline = require('readline'),
   Stream = require('stream'),
+  EventEmitter = require('events').EventEmitter,
+  util = require('util'),
   assert = require('assert'),
   slice = Array.prototype.slice,
   trailingChars = /[^\w\d]*$/,
@@ -10,8 +12,19 @@ var fs = require('fs'),
   eol = /\n|\r\n|\r/, // support win/legacy mac/unix line endings
   lineBufSize = 50000; // default lines to read at once in buffered mode
 
-exports.parseFromPath = function (filename, options, cb) {
+function Parser() {
+  if (!(this instanceof Parser)) {
+    return new Parser();
+  }
+  EventEmitter.call(this);
+}
+
+util.inherits(Parser, EventEmitter);
+
+Parser.prototype.parseFromPath = function (filename, options, cb) {
   assert(typeof filename === 'string');
+
+  var self = this;
 
   var fieldNames = [],
     nFields = 0,
@@ -97,7 +110,11 @@ exports.parseFromPath = function (filename, options, cb) {
       var rawText = buffer.toString('utf8'),
         trimmedText = rawText.replace(newLine, ''),
         rowText = trimmedText.split(eol);
-      rowText.forEach(addRow(cb));
+      rowText.forEach(addRow(function () {
+        var args = slice.call(arguments);
+        cb.apply(null, args);
+        self.emit('close');
+      }));
     }
   }
 
@@ -115,6 +132,7 @@ exports.parseFromPath = function (filename, options, cb) {
   }
 
   // Buffered mode
+
   function readBufferedFile(fpath) {
     var rs = fs.createReadStream(fpath),
       os = new Stream(),
@@ -151,11 +169,15 @@ exports.parseFromPath = function (filename, options, cb) {
         var args = slice.call(arguments);
         cb.apply(null, args);
         if (debug) {
-          console.log('total lines processed (including first line): %d', count);
+          console.log('total lines processed (including first line): %d',
+            count);
         }
+        self.emit('close');
       }));
     });
   }
 
   return buffered ? readBufferedFile(filename) : readFile(filename, parse);
 };
+
+exports.Parser = Parser;

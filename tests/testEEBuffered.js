@@ -24,3 +24,7 @@ var options = {
 
 var parser = new Parser();
 parser.parseFromPath(fname, options, logResults);
+
+parser.on('close', function () {
+  console.log('parser has closed');
+});
