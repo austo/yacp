@@ -17,7 +17,8 @@ exports.parseFromPath = function (filename, options, cb) {
     nFields = 0,
     buffered = false,
     lbufsz = 0,
-    firstPass = true;
+    firstPass = true,
+    debug = false;
 
   function initOptions(opts) {
     if (opts.fieldnames) {
@@ -31,6 +32,9 @@ exports.parseFromPath = function (filename, options, cb) {
       else {
         lbufsz = lineBufSize;
       }
+    }
+    if (opts.debug === true) {
+      debug = true;
     }
   }
 
@@ -145,8 +149,10 @@ exports.parseFromPath = function (filename, options, cb) {
     rl.on('close', function () {
       lines.forEach(addRow(function () {
         var args = slice.call(arguments);
-        console.log('total lines processed (including first line): %d', count);
         cb.apply(null, args);
+        if (debug) {
+          console.log('total lines processed (including first line): %d', count);
+        }
       }));
     });
   }
