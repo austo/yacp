@@ -81,6 +81,7 @@ Parser.prototype.parseFromPath = function (filename, options, cb) {
       }
 
       if (index === arr.length - 1) {
+        console.log('addrow: calling callback');
         callback(null, retval);
       }
     };
@@ -112,8 +113,9 @@ Parser.prototype.parseFromPath = function (filename, options, cb) {
         rowText = trimmedText.split(eol);
       rowText.forEach(addRow(function () {
         var args = slice.call(arguments);
-        cb.apply(null, args);
+        args.push(true);
         self.emit('close');
+        cb.apply(null, args);
       }));
     }
   }
@@ -156,6 +158,7 @@ Parser.prototype.parseFromPath = function (filename, options, cb) {
         lines.forEach(addRow(function () {
           var args = slice.call(arguments);
           cb.apply(null, args);
+          // self.emit('chunk', )
           lines = [];
           rl.resume();
         }));
@@ -167,12 +170,13 @@ Parser.prototype.parseFromPath = function (filename, options, cb) {
     rl.on('close', function () {
       lines.forEach(addRow(function () {
         var args = slice.call(arguments);
-        cb.apply(null, args);
+        args.push(true); // done
+        self.emit('close');
         if (debug) {
           console.log('total lines processed (including first line): %d',
             count);
         }
-        self.emit('close');
+        cb.apply(null, args);
       }));
     });
   }

@@ -2,15 +2,20 @@ var path = require('path'),
   filename = process.argv[2],
   Parser = require('../').Parser;
 
-var chunkCount = 0;
+var chunkCount = 0,
+  total = 0;
 
-function logResults(err, results) {
+function logResults(err, results, done) {
   console.log('chunk: %d', ++chunkCount);
   if (err) {
     return console.error(err);
   }
-  // console.log('chunk length: %d', results.length);
-  console.log(results);
+  var chunkLength = results.length;
+  total += chunkLength;
+  console.log('chunk length: %d', chunkLength);
+  if (done) {
+    console.log('total length: %d', total);
+  }
 }
 
 var fname = path.basename(__dirname) === path.dirname(filename) ?
