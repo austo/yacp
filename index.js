@@ -30,7 +30,6 @@ Parser.prototype.parseFromPath = function (filename, options, cb) {
     nFields = 0,
     buffered = false,
     lbufsz = 0,
-    firstPass = true,
     debug = false;
 
   function initOptions(opts) {
@@ -58,11 +57,15 @@ Parser.prototype.parseFromPath = function (filename, options, cb) {
     initOptions(options);
   }
 
-  function addRow(callback) {
+  function addRow(firstPass, callback) {
     var retval = [];
     return function (row, index, arr) {
       if (index === 0 && firstPass) {
         return getFieldNames(row);
+      }
+
+      if (!firstPass && index === 0) {
+        console.log('processing first line of chunk > 1');
       }
 
       var fields = row.split(','),
@@ -81,7 +84,6 @@ Parser.prototype.parseFromPath = function (filename, options, cb) {
       }
 
       if (index === arr.length - 1) {
-        console.log('addrow: calling callback');
         callback(null, retval);
       }
     };
@@ -111,9 +113,9 @@ Parser.prototype.parseFromPath = function (filename, options, cb) {
       var rawText = buffer.toString('utf8'),
         trimmedText = rawText.replace(newLine, ''),
         rowText = trimmedText.split(eol);
-      rowText.forEach(addRow(function () {
+      rowText.forEach(addRow(true, function () {
         var args = slice.call(arguments);
-        args.push(true);
+        args.push(true); // done
         self.emit('close');
         cb.apply(null, args);
       }));
@@ -140,7 +142,8 @@ Parser.prototype.parseFromPath = function (filename, options, cb) {
       os = new Stream(),
       count = 0,
       chunkCount = 0,
-      lines = [];
+      lines = [],
+      firstPass = true;
 
     var rl = readline.createInterface({
       input: rs,
@@ -155,10 +158,9 @@ Parser.prototype.parseFromPath = function (filename, options, cb) {
         if (chunkCount++ > 0) {
           firstPass = false;
         }
-        lines.forEach(addRow(function () {
+        lines.forEach(addRow(firstPass, function () {
           var args = slice.call(arguments);
           cb.apply(null, args);
-          // self.emit('chunk', )
           lines = [];
           rl.resume();
         }));
@@ -168,7 +170,7 @@ Parser.prototype.parseFromPath = function (filename, options, cb) {
     rl.on('line', handleLine);
 
     rl.on('close', function () {
-      lines.forEach(addRow(function () {
+      lines.forEach(addRow(false, function () {
         var args = slice.call(arguments);
         args.push(true); // done
         self.emit('close');
