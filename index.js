@@ -10,6 +10,7 @@ var fs = require('fs'),
   trailingChars = /[^\w\d]*$/,
   newLine = /[\n\r\s]*$/,
   eol = /\n|\r\n|\r/, // support win/legacy mac/unix line endings
+  versionRe = /^v(\d+)\.(\d+)/,
   lineBufSize = 50000; // default lines to read at once in buffered mode
 
 function Parser() {
@@ -64,9 +65,9 @@ Parser.prototype.parseFromPath = function (filename, options, cb) {
         return getFieldNames(row);
       }
 
-      if (!firstPass && index === 0) {
-        console.log('processing first line of chunk > 1');
-      }
+      // if (!firstPass && index === 0) {
+      //   console.log('processing first line of chunk > 1');
+      // }
 
       var fields = row.split(','),
         rowObj = {},
@@ -170,6 +171,11 @@ Parser.prototype.parseFromPath = function (filename, options, cb) {
     rl.on('line', handleLine);
 
     rl.on('close', function () {
+      // issue fixed in v.0.11+
+      var vMatches = process.version.match(versionRe);
+      if ((Number(vMatches[1]) === 0) && (Number(vMatches[2]) <= 10)) {
+        lines.push(rl._line_buffer);
+      }
       lines.forEach(addRow(false, function () {
         var args = slice.call(arguments);
         args.push(true); // done
