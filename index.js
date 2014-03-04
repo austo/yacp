@@ -65,10 +65,6 @@ Parser.prototype.parseFromPath = function (filename, options, cb) {
         return getFieldNames(row);
       }
 
-      // if (!firstPass && index === 0) {
-      //   console.log('processing first line of chunk > 1');
-      // }
-
       var fields = row.split(','),
         rowObj = {},
         add = false;
@@ -176,7 +172,7 @@ Parser.prototype.parseFromPath = function (filename, options, cb) {
       if ((Number(vMatches[1]) === 0) && (Number(vMatches[2]) <= 10)) {
         lines.push(rl._line_buffer);
       }
-      lines.forEach(addRow(false, function () {
+      lines.forEach(addRow(firstPass, function () {
         var args = slice.call(arguments);
         args.push(true); // done
         self.emit('close');
