@@ -31,12 +31,13 @@ Parser.prototype.parseFromPath = function (filename, options, cb) {
     nFields = 0,
     buffered = false,
     lbufsz = 0,
-    debug = false;
+    debug = false,
+    firstLineData = false;
 
   function initOptions(opts) {
     if (opts.fieldnames) {
       fieldNames = opts.fieldnames;
-    }
+    }    
     if (opts.buffer === true) {
       buffered = true;
       if ((opts.bufSize >>> 0) > 0) {
@@ -48,6 +49,13 @@ Parser.prototype.parseFromPath = function (filename, options, cb) {
     }
     if (opts.debug === true) {
       debug = true;
+    }
+    if (opts.firstLineData) {
+      if (!opts.fieldnames) {
+        return cb(new RangeError(
+          'field names must be provided if reading first line'));
+      }
+      firstLineData = true;
     }
   }
 
@@ -61,9 +69,12 @@ Parser.prototype.parseFromPath = function (filename, options, cb) {
   function addRow(firstPass, callback) {
     var retval = [];
     return function (row, index, arr) {
-      if (index === 0 && firstPass) {
-        return getFieldNames(row);
+      if (firstLineData) {
+        nFields = fieldNames.length;
       }
+      else if (index === 0 && firstPass) {
+        return getFieldNames(row);
+      }      
 
       var fields = row.split(','),
         rowObj = {},
@@ -167,6 +178,7 @@ Parser.prototype.parseFromPath = function (filename, options, cb) {
     rl.on('line', handleLine);
 
     rl.on('close', function () {
+      /*jshint camelcase: false */
       // issue fixed in v.0.11+
       var vMatches = process.version.match(versionRe);
       if ((Number(vMatches[1]) === 0) && (Number(vMatches[2]) <= 10)) {
